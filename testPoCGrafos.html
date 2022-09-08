@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Document</title>
+   <style>
+      body,
+      select {
+         font: 10pt sans;
+      }
+
+      #mynetwork {
+         position: relative;
+         width: 800px;
+         height: 600px;
+         border: 1px solid lightgray;
+      }
+
+      table.legend_table {
+         font-size: 11px;
+         border-width: 1px;
+         border-color: #d3d3d3;
+         border-style: solid;
+      }
+
+      table.legend_table,
+      td {
+         border-width: 1px;
+         border-color: #d3d3d3;
+         border-style: solid;
+         padding: 2px;
+      }
+
+      div.table_content {
+         width: 80px;
+         text-align: center;
+      }
+
+      div.table_description {
+         width: 100px;
+      }
+
+      #operation {
+         font-size: 28px;
+      }
+
+      #network-popUp {
+         display: none;
+         position: absolute;
+         top: 350px;
+         left: 170px;
+         z-index: 299;
+         width: 250px;
+         height: 120px;
+         background-color: #f9f9f9;
+         border-style: solid;
+         border-width: 3px;
+         border-color: #5394ed;
+         padding: 10px;
+         text-align: center;
+      }
+   </style>
+</head>
+
+<body>
+   <h2>Editing the nodes and edges (localized)</h2>
+   <p style="width: 700px; font-size: 14px; text-align: justify">
+      The localization is only relevant to the manipulation buttons.
+   </p>
+   <div id="network-popUp">
+      <span id="operation">node</span> <br />
+      <table style="margin: auto">
+         <tbody>
+            <tr>
+               <td>id</td>
+               <td><input id="node-id" value="new value" /></td>
+            </tr>
+            <tr>
+               <td>label</td>
+               <td><input id="node-label" value="new value" /></td>
+            </tr>
+         </tbody>
+      </table>
+      <input type="button" value="save" id="saveButton" />
+      <input type="button" value="cancel" id="cancelButton" />
+   </div>
+   <br />
+   <div id="mynetwork"></div>
+
+</body>
+<script src="https://visjs.github.io/vis-network/standalone/umd/vis-network.min.js"></script>
+<script src="https://unpkg.com/alea@1.0.0/alea.js"></script>
+<script src="https://visjs.github.io/vis-network/examples/network/exampleUtil.js"></script>
+<script>
+   var nodes = null;
+   var edges = null;
+   var network = null;
+   // randomly create some nodes and edges
+   var data = {
+      "nodes": [
+         {
+            id: 1,
+            label: 'Escalas del hábitat'
+         },
+         {
+            id: 2,
+            label: 'Panorama de la profesión, caracteristicas y tendencias'
+         },
+         {
+            id: 3,
+            label: 'Megatendencias: industria, ciudad, ambiental, vivienda'
+         },
+         {
+            id: 4,
+            label: 'Profesión e impato social'
+         },
+         {
+            id: 5,
+            label: 'Ética y propósito para ciudad, infraestructura, servicios, vivienda'
+         },
+         {
+            id: 6,
+            label: 'Principios del project managment'
+         },
+         {
+            id: 7,
+            label: 'Recursos, tiempo, calidad'
+         },
+         {
+            id: 8,
+            label: 'Materiales y experimentación'
+         },
+         {
+            id: 'Tema',
+            label: 'Propiedades'
+         },
+         {
+            id: 10,
+            label: 'Costos'
+         },
+         {
+            id: 11,
+            label: 'Aplicaciones'
+         },
+         {
+            id: 12,
+            label: 'Análisis sistémico'
+         },
+         {
+            id: 13,
+            label: 'Fenómenos naturales y antropogénicos en los ecosistemas e infraestrucutra'
+         },
+         {
+            id: 14,
+            label: 'Causas'
+         },
+         {
+            id: 15,
+            label: 'Estadísticas'
+         },
+         {
+            id: 16,
+            label: 'Riesgos'
+         },
+      ],
+      "edges": [
+         {
+            from: 1,
+            to: 2,
+            arrows: "to"
+         },
+         {
+            from: 1,
+            to: 3,
+            arrows: "to"
+         },
+         {
+            from: 1,
+            to: 4,
+            arrows: "to"
+         },
+         {
+            from: 1,
+            to: 5,
+            arrows: "to"
+         },
+         {
+            from: 1,
+            to: 6,
+            arrows: "to"
+         },
+         {
+            from: 1,
+            to: 7,
+            arrows: "to"
+         },
+         {
+            from: 1,
+            to: 8,
+            arrows: "to"
+         },
+         {
+            from: 'Tema',
+            to: 10,
+            arrows: "to"
+         },
+      ]
+   };
+
+   var seed = 2
+
+   function destroy() {
+      if (network !== null) {
+         network.destroy();
+         network = null;
+      }
+   }
+
+   function draw() {
+      destroy();
+      nodes = [];
+      edges = [];
+
+      // create a network
+      var container = document.getElementById("mynetwork");
+      var options = {
+         layout: { randomSeed: seed }, // just to make sure the layout is the same when the locale is changed
+         locale: 'es',
+         interaction: { keyboard: true },
+         nodes: {
+            shape: 'dot'
+         },
+         manipulation: {
+            addNode: function (data, callback) {
+               // filling in the popup DOM elements
+               document.getElementById("operation").innerText = "Add Node";
+               document.getElementById("node-id").value = data.id;
+               document.getElementById("node-label").value = data.label;
+               document.getElementById("saveButton").onclick = saveData.bind(
+                  this,
+                  data,
+                  callback
+               );
+               document.getElementById("cancelButton").onclick = clearPopUp.bind();
+               document.getElementById("network-popUp").style.display = "block";
+            },
+            editNode: function (data, callback) {
+               // filling in the popup DOM elements
+               document.getElementById("operation").innerText = "Edit Node";
+               document.getElementById("node-id").value = data.id;
+               document.getElementById("node-label").value = data.label;
+               document.getElementById("saveButton").onclick = saveData.bind(
+                  this,
+                  data,
+                  callback
+               );
+               document.getElementById("cancelButton").onclick = cancelEdit.bind(
+                  this,
+                  callback
+               );
+               document.getElementById("network-popUp").style.display = "block";
+            },
+            addEdge: function (data, callback) {
+               if (data.from == data.to) {
+                  var r = confirm("Do you want to connect the node to itself?");
+                  if (r == true) {
+                     callback(data);
+                  }
+               } else {
+                  callback(data);
+               }
+            },
+         },
+      };
+      network = new vis.Network(container, data, options);
+   }
+
+   function clearPopUp() {
+      document.getElementById("saveButton").onclick = null;
+      document.getElementById("cancelButton").onclick = null;
+      document.getElementById("network-popUp").style.display = "none";
+   }
+
+   function cancelEdit(callback) {
+      clearPopUp();
+      callback(null);
+   }
+
+   function saveData(data, callback) {
+      data.id = document.getElementById("node-id").value;
+      data.label = document.getElementById("node-label").value;
+      clearPopUp();
+      callback(data);
+   }
+
+   function init() {
+      draw();
+   }
+
+   window.addEventListener("load", () => {
+      init();
+   });
+
+</script>
+
+</html>
